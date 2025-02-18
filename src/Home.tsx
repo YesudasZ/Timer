@@ -4,6 +4,7 @@ import { TimerList } from "./components/TimerList";
 import { Toaster } from "sonner";
 import { TimerModal } from "./components/TimerModal";
 import { Button } from "./components/Button";
+import { TimerManager } from "./components/TimerManager";
 
 function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +22,7 @@ function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Toaster position={isMobile ? "bottom-center" : "top-right"} />
+      <TimerManager />
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

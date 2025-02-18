@@ -42,7 +42,7 @@ describe("TimerModal Component", () => {
       editTimer: mockEditTimer,
       deleteTimer: vi.fn(),
       toggleTimer: vi.fn(),
-      updateTimer: vi.fn(),
+      updateTimers: vi.fn(),
       restartTimer: vi.fn(),
     });
 

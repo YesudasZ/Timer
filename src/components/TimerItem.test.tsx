@@ -63,7 +63,7 @@ describe("TimerItem Component", () => {
       addTimer: vi.fn(),
       deleteTimer: mockDeleteTimer,
       toggleTimer: mockToggleTimer,
-      updateTimer: mockUpdateTimer,
+      updateTimers: mockUpdateTimer,
       restartTimer: mockRestartTimer,
       editTimer: vi.fn(),
     });

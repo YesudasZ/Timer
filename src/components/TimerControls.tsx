@@ -12,7 +12,7 @@ interface TimerControlsProps {
 export const TimerControls: React.FC<TimerControlsProps> = ({
   isRunning,
   remainingTime,
-  duration,
+  // duration,
   onToggle,
   onRestart,
 }) => {

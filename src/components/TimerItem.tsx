@@ -14,14 +14,13 @@ interface TimerItemProps {
 }
 
 export const TimerItem: React.FC<TimerItemProps> = ({ timer }) => {
-  const { toggleTimer, deleteTimer, updateTimer, restartTimer } =
+  const { toggleTimer, deleteTimer, restartTimer } =
     useTimerStore();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const intervalRef = useRef<number | null>(null);
-  const timerAudio = TimerAudio.getInstance();
   const hasEndedRef = useRef(false);
   const toastIdRef = useRef<string | number | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const timerAudio = TimerAudio.getInstance();
 
   useEffect(() => {
     const handleResize = () => {
@@ -33,52 +32,31 @@ export const TimerItem: React.FC<TimerItemProps> = ({ timer }) => {
   }, []);
 
   useEffect(() => {
-    if (timer.isRunning && timer.remainingTime > 0) {
-      intervalRef.current = window.setInterval(() => {
-        updateTimer(timer.id);
+    if (timer.remainingTime <= 0 && timer.isRunning === false && !hasEndedRef.current) {
+      hasEndedRef.current = true;
+      timerAudio.playFor5Seconds().catch(console.error);
 
-        if (timer.remainingTime <= 1 && !hasEndedRef.current) {
-          hasEndedRef.current = true;
-          timerAudio.playFor5Seconds().catch(console.error);
-
-          toastIdRef.current = toast.success(
-            `Timer "${timer.title}" has ended!`,
-            {
-              duration: 5000,
-              position: isMobile ? "bottom-center" : "top-right",
-              action: {
-                label: "Dismiss",
-                onClick: () => {
-                  timerAudio.stop();
-                  toast.dismiss(toastIdRef.current!);
-                  toastIdRef.current = null;
-                },
-              },
-              onDismiss: () => {
-                timerAudio.stop();
-                toastIdRef.current = null;
-              },
-            }
-          );
+      toastIdRef.current = toast.success(
+        `Timer "${timer.title}" has ended!`,
+        {
+          duration: 5000,
+          position: isMobile ? "bottom-center" : "top-right",
+          action: {
+            label: "Dismiss",
+            onClick: () => {
+              timerAudio.stop();
+              toast.dismiss(toastIdRef.current!);
+              toastIdRef.current = null;
+            },
+          },
+          onDismiss: () => {
+            timerAudio.stop();
+            toastIdRef.current = null;
+          },
         }
-      }, 1000);
+      );
     }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [
-    timer.isRunning,
-    timer.id,
-    timer.remainingTime,
-    timer.title,
-    timerAudio,
-    updateTimer,
-    isMobile,
-  ]);
+  }, [timer.remainingTime, timer.isRunning, timer.title, timerAudio, isMobile]);
 
   useEffect(() => {
     return () => {

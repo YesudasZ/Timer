@@ -44,12 +44,15 @@ const timerSlice = createSlice({
         timer.isRunning = !timer.isRunning;
       }
     },
-    updateTimer: (state, action) => {
-      const timer = state.timers.find((timer) => timer.id === action.payload);
-      if (timer && timer.isRunning) {
-        timer.remainingTime -= 1;
-        timer.isRunning = timer.remainingTime > 0;
-      }
+    updateTimers: (state) => {
+      state.timers.forEach(timer => {
+        if (timer.isRunning && timer.remainingTime > 0) {
+          timer.remainingTime -= 1;
+          if (timer.remainingTime <= 0) {
+            timer.isRunning = false;
+          }
+        }
+      });
     },
     restartTimer: (state, action) => {
       const timer = state.timers.find((timer) => timer.id === action.payload);
@@ -91,7 +94,7 @@ export const {
   addTimer,
   deleteTimer,
   toggleTimer,
-  updateTimer,
+  updateTimers,
   restartTimer,
   editTimer,
 } = timerSlice.actions;
@@ -106,7 +109,7 @@ export const useTimerStore = () => {
       dispatch(addTimer(timer)),
     deleteTimer: (id: string) => dispatch(deleteTimer(id)),
     toggleTimer: (id: string) => dispatch(toggleTimer(id)),
-    updateTimer: (id: string) => dispatch(updateTimer(id)),
+    updateTimers: () => dispatch(updateTimers()),
     restartTimer: (id: string) => dispatch(restartTimer(id)),
     editTimer: (id: string, updates: Partial<Timer>) =>
       dispatch(editTimer({ id, updates })),
