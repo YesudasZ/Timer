@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { TimerModal } from "../components/TimerModal";
-import { useTimerStore } from "../store/useTimerStore";
-import * as validation from "../utils/validation";
+import { TimerModal } from "./TimerModal";
+import { useTimerStore } from "../../store/useTimerStore";
+import * as validation from "../../utils/validation";
 import "@testing-library/jest-dom";
 
 vi.mock("../store/useTimerStore", () => ({

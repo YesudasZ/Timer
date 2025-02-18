@@ -1,12 +1,5 @@
 import { toast } from 'sonner';
-
-export interface TimerFormData {
-  title: string;
-  description: string;
-  hours: number;
-  minutes: number;
-  seconds: number;
-}
+import { TimerFormData } from '../types/timer';
 
 export const validateTimerForm = (data: TimerFormData): boolean => {
   const { title, hours, minutes, seconds } = data;

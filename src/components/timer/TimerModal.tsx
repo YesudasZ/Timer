@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { X, Clock } from "lucide-react";
-import { useTimerStore } from "../store/useTimerStore";
-import { validateTimerForm } from "../utils/validation";
-import { Timer } from "../types/timer";
-import { Button } from "./Button";
+import { useTimerStore } from "../../store/useTimerStore";
+import { validateTimerForm } from "../../utils/validation";
+import { Timer, TimerModalMode } from "../../types/timer";
+import { Button } from "../common/Button";
 
 interface TimerModalProps {
   isOpen: boolean;
   onClose: () => void;
   timer?: Timer;
-  mode: "add" | "edit";
+  mode: TimerModalMode;
 }
 
 export const TimerModal: React.FC<TimerModalProps> = ({
@@ -18,55 +18,79 @@ export const TimerModal: React.FC<TimerModalProps> = ({
   timer,
   mode,
 }) => {
-  const defaultTimer = {
-    id: "",
-    title: "",
-    description: "",
-    duration: 0,
-    remainingTime: 0,
-    isRunning: false,
-  };
-
-  const currentTimer = timer || defaultTimer;
-
-  const [title, setTitle] = useState(currentTimer.title);
-  const [description, setDescription] = useState(currentTimer.description);
-  const [hours, setHours] = useState(Math.floor(currentTimer.duration / 3600));
-  const [minutes, setMinutes] = useState(
-    Math.floor((currentTimer.duration % 3600) / 60)
-  );
-  const [seconds, setSeconds] = useState(currentTimer.duration % 60);
-  const [touched, setTouched] = useState({
-    title: false,
-    hours: false,
-    minutes: false,
-    seconds: false,
-  });
-
-  const { addTimer, editTimer } = useTimerStore();
-
-  useEffect(() => {
-    if (isOpen) {
-      if (mode === "edit" && timer) {
-        setTitle(timer.title);
-        setDescription(timer.description);
-        setHours(Math.floor(timer.duration / 3600));
-        setMinutes(Math.floor((timer.duration % 3600) / 60));
-        setSeconds(timer.duration % 60);
-      } else {
-        setTitle("");
-        setDescription("");
-        setHours(0);
-        setMinutes(0);
-        setSeconds(0);
-      }
-
+  const useTimerForm = (initialTimer?: Timer) => {
+    const defaultTimer = {
+      id: "",
+      title: "",
+      description: "",
+      duration: 0,
+      remainingTime: 0,
+      isRunning: false,
+      createdAt: 0,
+    };
+    
+    const currentTimer = initialTimer || defaultTimer;
+    
+    const [title, setTitle] = useState(currentTimer.title);
+    const [description, setDescription] = useState(currentTimer.description);
+    const [hours, setHours] = useState(Math.floor(currentTimer.duration / 3600));
+    const [minutes, setMinutes] = useState(Math.floor((currentTimer.duration % 3600) / 60));
+    const [seconds, setSeconds] = useState(currentTimer.duration % 60);
+    const [touched, setTouched] = useState({
+      title: false,
+      hours: false,
+      minutes: false,
+      seconds: false,
+    });
+    
+    const resetForm = (newTimer?: Timer) => {
+      const timerToUse = newTimer || defaultTimer;
+      setTitle(timerToUse.title);
+      setDescription(timerToUse.description);
+      setHours(Math.floor(timerToUse.duration / 3600));
+      setMinutes(Math.floor((timerToUse.duration % 3600) / 60));
+      setSeconds(timerToUse.duration % 60);
       setTouched({
         title: false,
         hours: false,
         minutes: false,
         seconds: false,
       });
+    };
+    
+    const isTimeValid = hours > 0 || minutes > 0 || seconds > 0;
+    const isTitleValid = title.trim().length > 0 && title.length <= 50;
+    
+    return {
+      title,
+      setTitle,
+      description,
+      setDescription,
+      hours,
+      setHours,
+      minutes,
+      setMinutes,
+      seconds,
+      setSeconds,
+      touched,
+      setTouched,
+      resetForm,
+      isTimeValid,
+      isTitleValid,
+      getTotalSeconds: () => hours * 3600 + minutes * 60 + seconds,
+    };
+  };
+
+  const form = useTimerForm(timer);
+  const { addTimer, editTimer } = useTimerStore();
+
+  useEffect(() => {
+    if (isOpen) {
+      if (mode === "edit" && timer) {
+        form.resetForm(timer);
+      } else {
+        form.resetForm();
+      }
     }
   }, [isOpen, timer, mode]);
 
@@ -75,24 +99,30 @@ export const TimerModal: React.FC<TimerModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const isFormValid = validateTimerForm({ title, description, hours, minutes, seconds });
+    const isFormValid = validateTimerForm({
+      title: form.title,
+      description: form.description,
+      hours: form.hours,
+      minutes: form.minutes,
+      seconds: form.seconds
+    });
     
     if (!isFormValid) {
       return;
     }
 
-    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+    const totalSeconds = form.getTotalSeconds();
 
     if (mode === "edit" && timer) {
       editTimer(timer.id, {
-        title: title.trim(),
-        description: description.trim(),
+        title: form.title.trim(),
+        description: form.description.trim(),
         duration: totalSeconds,
       });
     } else {
       addTimer({
-        title: title.trim(),
-        description: description.trim(),
+        title: form.title.trim(),
+        description: form.description.trim(),
         duration: totalSeconds,
         remainingTime: totalSeconds,
         isRunning: false,
@@ -104,16 +134,13 @@ export const TimerModal: React.FC<TimerModalProps> = ({
 
   const handleClose = () => {
     onClose();
-    setTouched({
+    form.setTouched({
       title: false,
       hours: false,
       minutes: false,
       seconds: false,
     });
   };
-
-  const isTimeValid = hours > 0 || minutes > 0 || seconds > 0;
-  const isTitleValid = title.trim().length > 0 && title.length <= 50;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -140,24 +167,24 @@ export const TimerModal: React.FC<TimerModalProps> = ({
             </label>
             <input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={() => setTouched({ ...touched, title: true })}
+              value={form.title}
+              onChange={(e) => form.setTitle(e.target.value)}
+              onBlur={() => form.setTouched({ ...form.touched, title: true })}
               maxLength={50}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                touched.title && !isTitleValid
+                form.touched.title && !form.isTitleValid
                   ? "border-red-500"
                   : "border-gray-300"
               }`}
               placeholder="Enter timer title"
             />
-            {touched.title && !isTitleValid && (
+            {form.touched.title && !form.isTitleValid && (
               <p className="mt-1 text-sm text-red-500">
                 Title is required and must be less than 50 characters
               </p>
             )}
             <p className="mt-1 text-sm text-gray-500">
-              {title.length}/50 characters
+              {form.title.length}/50 characters
             </p>
           </div>
 
@@ -166,8 +193,8 @@ export const TimerModal: React.FC<TimerModalProps> = ({
               Description
             </label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={form.description}
+              onChange={(e) => form.setDescription(e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter timer description (optional)"
@@ -187,11 +214,11 @@ export const TimerModal: React.FC<TimerModalProps> = ({
                   type="number"
                   min="0"
                   max="23"
-                  value={hours}
+                  value={form.hours}
                   onChange={(e) =>
-                    setHours(Math.min(23, parseInt(e.target.value) || 0))
+                    form.setHours(Math.min(23, parseInt(e.target.value) || 0))
                   }
-                  onBlur={() => setTouched({ ...touched, hours: true })}
+                  onBlur={() => form.setTouched({ ...form.touched, hours: true })}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -203,11 +230,11 @@ export const TimerModal: React.FC<TimerModalProps> = ({
                   type="number"
                   min="0"
                   max="59"
-                  value={minutes}
+                  value={form.minutes}
                   onChange={(e) =>
-                    setMinutes(Math.min(59, parseInt(e.target.value) || 0))
+                    form.setMinutes(Math.min(59, parseInt(e.target.value) || 0))
                   }
-                  onBlur={() => setTouched({ ...touched, minutes: true })}
+                  onBlur={() => form.setTouched({ ...form.touched, minutes: true })}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -219,19 +246,19 @@ export const TimerModal: React.FC<TimerModalProps> = ({
                   type="number"
                   min="0"
                   max="59"
-                  value={seconds}
+                  value={form.seconds}
                   onChange={(e) =>
-                    setSeconds(Math.min(59, parseInt(e.target.value) || 0))
+                    form.setSeconds(Math.min(59, parseInt(e.target.value) || 0))
                   }
-                  onBlur={() => setTouched({ ...touched, seconds: true })}
+                  onBlur={() => form.setTouched({ ...form.touched, seconds: true })}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
-            {touched.hours &&
-              touched.minutes &&
-              touched.seconds &&
-              !isTimeValid && (
+            {form.touched.hours &&
+              form.touched.minutes &&
+              form.touched.seconds &&
+              !form.isTimeValid && (
                 <p className="mt-2 text-sm text-red-500">
                   Please set a duration greater than 0
                 </p>

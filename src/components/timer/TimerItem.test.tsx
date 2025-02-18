@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { TimerItem } from "../components/TimerItem";
-import { useTimerStore } from "../store/useTimerStore";
-import { TimerAudio } from "../utils/audio";
+import { TimerItem } from "./TimerItem";
+import { useTimerStore } from "../../store/useTimerStore";
+import { TimerAudio } from "../../utils/audio";
 import { toast } from "sonner";
 import "@testing-library/jest-dom";
 

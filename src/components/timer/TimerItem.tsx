@@ -1,106 +1,25 @@
-import React, { useEffect, useRef, useState } from "react";
+// src/components/timer/TimerItem.tsx
+import React from "react";
 import { Trash2, RotateCcw, Pencil } from "lucide-react";
-import { Timer } from "../types/timer";
-import { formatTime } from "../utils/time";
-import { useTimerStore } from "../store/useTimerStore";
-import { toast } from "sonner";
-import { TimerAudio } from "../utils/audio";
+import { Timer } from "../../types/timer";
+import { formatTime } from "../../utils/time";
 import { TimerControls } from "./TimerControls";
 import { TimerProgress } from "./TimerProgress";
 import { TimerModal } from "./TimerModal";
+import { useTimer } from "../../hooks/useTimer";
 
 interface TimerItemProps {
   timer: Timer;
 }
 
 export const TimerItem: React.FC<TimerItemProps> = ({ timer }) => {
-  const { toggleTimer, deleteTimer, restartTimer } =
-    useTimerStore();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const hasEndedRef = useRef(false);
-  const toastIdRef = useRef<string | number | null>(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const timerAudio = TimerAudio.getInstance();
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (timer.remainingTime <= 0 && timer.isRunning === false && !hasEndedRef.current) {
-      hasEndedRef.current = true;
-      timerAudio.playFor5Seconds().catch(console.error);
-
-      toastIdRef.current = toast.success(
-        `Timer "${timer.title}" has ended!`,
-        {
-          duration: 5000,
-          position: isMobile ? "bottom-center" : "top-right",
-          action: {
-            label: "Dismiss",
-            onClick: () => {
-              timerAudio.stop();
-              toast.dismiss(toastIdRef.current!);
-              toastIdRef.current = null;
-            },
-          },
-          onDismiss: () => {
-            timerAudio.stop();
-            toastIdRef.current = null;
-          },
-        }
-      );
-    }
-  }, [timer.remainingTime, timer.isRunning, timer.title, timerAudio, isMobile]);
-
-  useEffect(() => {
-    return () => {
-      if (toastIdRef.current) {
-        timerAudio.stop();
-        toast.dismiss(toastIdRef.current);
-        toastIdRef.current = null;
-      }
-    };
-  }, [timerAudio]);
-
-  const handleRestart = () => {
-    if (toastIdRef.current) {
-      timerAudio.stop();
-      toast.dismiss(toastIdRef.current);
-      toastIdRef.current = null;
-    }
-
-    hasEndedRef.current = false;
-    restartTimer(timer.id);
-  };
-
-  const handleDelete = () => {
-    if (toastIdRef.current) {
-      timerAudio.stop();
-      toast.dismiss(toastIdRef.current);
-      toastIdRef.current = null;
-    }
-
-    deleteTimer(timer.id);
-  };
-
-  const handleToggle = () => {
-    if (timer.remainingTime <= 0) {
-      if (toastIdRef.current) {
-        timerAudio.stop();
-        toast.dismiss(toastIdRef.current);
-        toastIdRef.current = null;
-      }
-
-      hasEndedRef.current = false;
-    }
-    toggleTimer(timer.id);
-  };
+  const {
+    isEditModalOpen,
+    setIsEditModalOpen,
+    handleRestart,
+    handleDelete,
+    handleToggle
+  } = useTimer(timer);
 
   return (
     <>

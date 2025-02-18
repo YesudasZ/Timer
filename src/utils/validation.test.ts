@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   validateTimerForm,
   showValidationToast,
-  TimerFormData,
 } from "../utils/validation";
 import { toast } from "sonner";
+import { TimerFormData } from "../types/timer";
 
 vi.mock("sonner", () => ({
   toast: {
