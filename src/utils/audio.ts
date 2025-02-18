@@ -3,6 +3,8 @@ export class TimerAudio {
   private audioContext: AudioContext | null = null;
   private oscillator: OscillatorNode | null = null;
   private gainNode: GainNode | null = null;
+  private loopTimeout: number | null = null;
+  private beepInterval: number | null = null;
 
   private constructor() {}
 
@@ -18,7 +20,7 @@ export class TimerAudio {
       this.audioContext = new AudioContext();
     }
 
-    if (this.audioContext.state === 'suspended') {
+    if (this.audioContext.state === "suspended") {
       await this.audioContext.resume();
     }
   }
@@ -26,43 +28,85 @@ export class TimerAudio {
   async play(): Promise<void> {
     try {
       await this.initializeAudioContext();
-      
+
       if (!this.audioContext) {
-        throw new Error('AudioContext not initialized');
+        throw new Error("AudioContext not initialized");
       }
 
-      // Create and configure oscillator
       this.oscillator = this.audioContext.createOscillator();
       this.gainNode = this.audioContext.createGain();
-      
-      this.oscillator.type = 'sine';
-      this.oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime); // A5 note
-      
-      // Configure gain (volume) envelope
+
+      this.oscillator.type = "sine";
+      this.oscillator.frequency.setValueAtTime(
+        880,
+        this.audioContext.currentTime
+      );
+
       this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-      this.gainNode.gain.linearRampToValueAtTime(0.5, this.audioContext.currentTime + 0.01);
-      this.gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.5);
-      
-      // Connect nodes
+      this.gainNode.gain.linearRampToValueAtTime(
+        0.5,
+        this.audioContext.currentTime + 0.01
+      );
+      this.gainNode.gain.linearRampToValueAtTime(
+        0,
+        this.audioContext.currentTime + 0.5
+      );
+
       this.oscillator.connect(this.gainNode);
       this.gainNode.connect(this.audioContext.destination);
-      
-      // Start and stop the oscillator
+
       this.oscillator.start(this.audioContext.currentTime);
       this.oscillator.stop(this.audioContext.currentTime + 0.5);
-      
-      // Cleanup after sound ends
+
       setTimeout(() => {
         this.cleanup();
       }, 500);
-
     } catch (error) {
-      console.error('Failed to play audio:', error);
+      console.error("Failed to play audio:", error);
+    }
+  }
+
+  async playFor5Seconds(): Promise<void> {
+    this.stop();
+
+    try {
+      await this.play();
+
+      let count = 1;
+      this.beepInterval = window.setInterval(async () => {
+        await this.play();
+        count++;
+
+        if (count >= 6) {
+          this.stop();
+        }
+      }, 800);
+
+      this.loopTimeout = window.setTimeout(() => {
+        this.stop();
+      }, 5000);
+    } catch (error) {
+      console.error("Failed to play audio for 5 seconds:", error);
     }
   }
 
   stop(): void {
+    if (this.loopTimeout !== null) {
+      window.clearTimeout(this.loopTimeout);
+      this.loopTimeout = null;
+    }
+
+    if (this.beepInterval !== null) {
+      window.clearInterval(this.beepInterval);
+      this.beepInterval = null;
+    }
+
     this.cleanup();
+    if (this.audioContext) {
+      this.audioContext
+        .suspend()
+        .catch((err) => console.error("Failed to suspend AudioContext:", err));
+    }
   }
 
   private cleanup(): void {
@@ -70,15 +114,19 @@ export class TimerAudio {
       try {
         this.oscillator.stop();
         this.oscillator.disconnect();
+        this.oscillator = null;
       } catch (error) {
-        console.log(error)
+        console.error("Error oscillator stop:", error);
       }
-      this.oscillator = null;
     }
 
     if (this.gainNode) {
-      this.gainNode.disconnect();
-      this.gainNode = null;
+      try {
+        this.gainNode.disconnect();
+        this.gainNode = null;
+      } catch (error) {
+        console.error("Error disconnecting gain node:", error);
+      }
     }
   }
 }

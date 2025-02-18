@@ -80,3 +80,5 @@ export const useTimerStore = () => {
     editTimer: (id: string, updates: Partial<Timer>) => dispatch(editTimer({ id, updates })),
   };
 };
+
+
