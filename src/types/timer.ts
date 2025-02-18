@@ -2,7 +2,7 @@ export interface Timer {
   id: string;
   title: string;
   description: string;
-  duration: number; // in seconds
+  duration: number; 
   remainingTime: number;
   isRunning: boolean;
   createdAt: number;
