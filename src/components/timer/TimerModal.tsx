@@ -83,16 +83,23 @@ export const TimerModal: React.FC<TimerModalProps> = ({
 
   const form = useTimerForm(timer);
   const { addTimer, editTimer } = useTimerStore();
+  const initialMount = React.useRef(true);
 
   useEffect(() => {
     if (isOpen) {
-      if (mode === "edit" && timer) {
-        form.resetForm(timer);
-      } else {
-        form.resetForm();
+      if (initialMount.current) {
+        initialMount.current = false;
+        
+        if (mode === "edit" && timer) {
+          form.resetForm(timer);
+        } else {
+          form.resetForm();
+        }
       }
+    } else {
+      initialMount.current = true;
     }
-  }, [isOpen, timer, mode]);
+  }, [isOpen, timer, mode, form]);
 
   if (!isOpen) return null;
 
